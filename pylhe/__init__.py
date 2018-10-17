@@ -1,4 +1,5 @@
 import os
+import math
 
 class LHEFile(object):
     def __init__(self):
@@ -18,11 +19,11 @@ class LHEEventInfo(object):
             raise RuntimeError
         for k,v in kwargs.iteritems():
             setattr(self,k,v)
-    
+
     @classmethod
     def fromstring(cls,string):
         return cls(**dict(zip(cls.fieldnames,map(float,string.split()))))
-    
+
 
 class LHEParticle(object):
     fieldnames = fieldnames = ['id','status','mother1','mother2','color1','color2','px','py','pz','e','m','lifetime','spin']
@@ -31,12 +32,24 @@ class LHEParticle(object):
             raise RuntimeError
         for k,v in kwargs.iteritems():
             setattr(self,k,v)
-    
+
     @classmethod
     def fromstring(cls,string):
         obj = cls(**dict(zip(cls.fieldnames,map(float,string.split()))))
         return obj
-    
+
+    @property
+    def pt(self):
+        return math.hypot(self.px, self.py)
+
+    @property
+    def eta(self):
+        return -math.log(math.tan(self.phi/2.0))
+
+    @property
+    def phi(self):
+        return math.atan2(self.x, self.y)
+
     def mothers(self):
         mothers = []
         first_idx  =  int(self.mother1)-1
@@ -44,14 +57,14 @@ class LHEParticle(object):
         for idx in set([first_idx,second_idx]):
             if idx >= 0: mothers.append(self.event.particles[idx])
         return mothers
-    
+
 def loads():
     pass
-  
+
 import xml.etree.ElementTree as ET
 def readLHE(thefile):
     try:
-        for event,element in ET.iterparse(thefile,events=['end']):      
+        for event,element in ET.iterparse(thefile,events=['end']):
             if element.tag == 'event':
                 data = element.text.split('\n')[1:-1]
                 eventdata,particles = data[0],data[1:]
@@ -60,11 +73,11 @@ def readLHE(thefile):
                 for p in particles:
                     particle_objs+=[LHEParticle.fromstring(p)]
                 yield LHEEvent(eventinfo,particle_objs)
-    
+
     except ET.ParseError:
         print "WARNING. Parse Error."
         return
-    
+
 import networkx as nx
 import pypdt
 import tex2pix
