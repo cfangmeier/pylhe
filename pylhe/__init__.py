@@ -39,16 +39,20 @@ class LHEParticle(object):
         return obj
 
     @property
+    def p(self):
+        return math.sqrt(self.px**2 + self.py**2 + self.pz**2)
+
+    @property
     def pt(self):
         return math.hypot(self.px, self.py)
 
     @property
     def eta(self):
-        return -math.log(math.tan(self.phi/2.0))
+        return math.atanh(self.pz / self.p)
 
     @property
     def phi(self):
-        return math.atan2(self.x, self.y)
+        return math.atan2(self.px, self.py)
 
     def mothers(self):
         mothers = []
